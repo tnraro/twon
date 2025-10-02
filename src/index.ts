@@ -17,6 +17,7 @@ serve({
           console.info(new Date().toISOString(), items, result);
           return json({
             result,
+            date: new Date().toISOString().split("T")[0],
             items,
           });
         } catch (error) {
