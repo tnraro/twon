@@ -1,4 +1,5 @@
 import { escapeHTML, serve } from "bun";
+import * as cache from "./cache";
 
 serve({
   routes: {
@@ -10,7 +11,8 @@ serve({
           if (v == null) return new Response(usage(), { status: 400 });
 
           const items = v.split(",").map((x) => x.trim());
-          const item = randomDraw(items);
+          const key = items.join(",");
+          const item = cache.get(key, () => randomDraw(items));
 
           console.info(new Date().toISOString(), items, item);
           return new Response(html(items, item), {
