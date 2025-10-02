@@ -1,4 +1,4 @@
-import { escapeHTML, serve } from "bun";
+import { serve } from "bun";
 import * as cache from "./cache";
 
 serve({
@@ -8,18 +8,16 @@ serve({
         try {
           const url = new URL(req.url);
           const v = url.searchParams.get("v");
-          if (v == null) return new Response(usage(), { status: 400 });
+          if (v == null) return error(usage(), 400);
 
           const items = v.split(",").map((x) => x.trim());
           const key = items.join(",");
-          const item = cache.get(key, () => randomDraw(items));
+          const result = cache.get(key, () => randomDraw(items));
 
-          console.info(new Date().toISOString(), items, item);
-          return new Response(html(items, item), {
-            headers: {
-              "Content-Type": "text/html;charset=utf-8",
-              "Cache-Control": "no-store",
-            },
+          console.info(new Date().toISOString(), items, result);
+          return json({
+            result,
+            items,
           });
         } catch (error) {
           if (error instanceof Response) {
@@ -29,45 +27,36 @@ serve({
         }
       },
     },
+    "/cache": {
+      DELETE: async () => {
+        cache.prune();
+        return json({}, 204);
+      },
+    },
   },
 });
 
 function randomDraw(items: string[]) {
-  if (items.length <= 1) throw new Response(usage(), { status: 400 });
+  if (items.length <= 1) throw error(usage(), 400);
   const index = Math.floor(Math.random() * items.length);
   const item = items[index];
-  if (item == null) throw new Response(usage(), { status: 400 });
+  if (item == null) throw error(usage(), 400);
 
   return item;
 }
 
-function html(items: string[], item: string) {
-  return `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta property="og:title" content="Random draw" />
-    <meta property="og:description" content="result: ||??||" />
-    <title>Random draw</title>
-  </head>
-  <body>
-    <h1>Random draw</h1>
-    <section>
-      <h2>result</h2>
-      ${escapeHTML(item)}
-    </section>
-    <section>
-      <h2>list</h2>
-      ${escapeHTML(items.join(", "))}
-    </section>
-    <section>
-      <h2>usage</h2>
-      <code>${escapeHTML(usage())}</code>
-    </section>
-  </body>
-</html>
-`;
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json;charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+function error(message: string, status: number) {
+  return json({ error: message }, status);
 }
 
 function usage() {
