@@ -46,7 +46,7 @@ function html(items: string[], item: string) {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta property="og:title" content="Random draw" />
-    <meta property="og:description" content="result: ${escapeHTML(item)}" />
+    <meta property="og:description" content="result: ||??||" />
     <title>Random draw</title>
   </head>
   <body>
